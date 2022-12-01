@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>課題05</title>
+
+    <style>
+      #output {
+          background: pink;
+          height: 300px;
+          overflow: scroll;
+      }
+  </style>
+  </head>
+  <body>
+    <p>保存</p>
+
+    <div id="map" style="width:620px; height:400px"></div>
+
+    <button id="hozon">保存</button>
+
+    緯度：<input type="text" id="lat" name="lat" value="" size="20">　経度：<input type="text" id="lng" name="lng" value="" size="20">
+
+    <div id="output"></div>
+
+    <script type="text/javascript">
+  // Note: This example requires that you consent to location sharing when
+// prompted by your browser. If you see the error "The Geolocation service
+// failed.", it means you probably did not give permission for the browser to
+// locate you.
+let map, infoWindow;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 35.6769883, lng: 139.7588499 },
+    zoom: 14,
+  });
+  infoWindow = new google.maps.InfoWindow();
+
+  const locationButton = document.createElement("button");
+
+  locationButton.textContent = "現在地を表示する";
+  locationButton.classList.add("custom-map-control-button");
+  map.controls[google.maps.ControlPosition.TOP_CENTER].push(locationButton);
+  locationButton.addEventListener("click", () => {
+    // Try HTML5 geolocation.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          infoWindow.setPosition(pos);
+          infoWindow.setContent("現在地が見つかりました");
+          infoWindow.open(map);
+          map.setCenter(pos);
+        },
+        () => {
+          handleLocationError(true, infoWindow, map.getCenter());
+        }
+      );
+    } else {
+      // Browser doesn't support Geolocation
+      handleLocationError(false, infoWindow, map.getCenter());
+    }
+  });
+
+  map.addListener('click', function(e) {
+    clickMap(e.latLng, map);
+  });
+}
+
+function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+  infoWindow.setPosition(pos);
+  infoWindow.setContent(
+    browserHasGeolocation
+      ? "Error: The Geolocation service failed."
+      : "Error: Your browser doesn't support geolocation."
+  );
+  infoWindow.open(map);
+}
+
+window.initMap = initMap;
+
+function clickMap(geo, map) {
+  lat = geo.lat();
+  lng = geo.lng();
+ 
+  //小数点以下6桁に丸める場合
+  //lat = Math.floor(lat * 1000000) / 1000000);
+  //lng = Math.floor(lng * 1000000) / 1000000);
+ 
+  document.getElementById('lat').value = lat;
+  document.getElementById('lng').value = lng;
+ 
+  //中心にスクロール
+  map.panTo(geo);
+ 
+  //マーカーの更新
+  marker.setMap(null);
+  marker = null;
+  marker = new google.maps.Marker({
+    map: map, position: geo 
+  });
+  
+}
+
+    </script>
+
+
+     <!--APIキー　google-->
+
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=(APIKEY)&callback=initMap">
+    </script>
+
+        <!-- JQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <!-- JQuery -->
+    
+
+        <!--** 以下Firebase **-->
+        <script type="module">
+            // Import the functions you need from the SDKs you need
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+    
+            // 貼り付ける場所
+            import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+            // 
+    
+    
+            // TODO: Add SDKs for Firebase products that you want to use
+            // https://firebase.google.com/docs/web/setup#available-libraries
+    
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+            //APIキー（firebase)
+            };
+    
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+    
+            // この辺りに書いていきます
+    
+    
+            const db = getDatabase(app);
+            const dbRef = ref(db, 'dev245');
+    
+            // 送信処理を記述
+            $('#hozon').on('click', function () {
+    
+              
+              const msg = {
+                text: lat,
+                text2: lng,
+              }
+
+                // firebaseに送る準備をしていることになります🤗
+                const newPostRef = push(dbRef) //データを送信できる準備
+                set(newPostRef, msg); // firebaseの登録できる場所に保存するイメージです🤗
+    
+                $('#text').val("");
+                $('#text2').val("");
+    
+                // send送信イベント この下消さない
+            });
+    
+            $("#text").on('keydown',function (e){
+    
+            });
+    
+        //受信処理
+    
+       // 受信処理を記述
+       onChildAdded(dbRef, function (data) {
+                // ここからが受信処理が始まります
+    
+                // 登録されたデータを取得します🤗
+                const msg = data.val();
+                console.log(msg, '取得したデータの塊')
+                const key = data.key;
+                console.log(key, 'データの塊にアクセス')
+        
+                // es6のテンプレートリテラル
+    
+
+                    let e = `
+                    <div class="msg">
+                        <p>緯度：${msg.text}<br>経度：${msg.text2}</p>
+                    </div>    
+                `;
+                $("#output").append(e);
+
+
+
+    
+            
+                // htmlに埋め込みましょう🤗
+                // append();というjqueryのおまじないを使います
+                const output = document.getElementById('output');
+                output.scrollTo(0, output.scrollHeight);
+    
+            })
+        
+      </script>
+
+
+  </body>
+</html>
